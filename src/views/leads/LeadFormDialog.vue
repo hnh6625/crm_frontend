@@ -186,18 +186,33 @@ async function submit() {
   loading.value = true
   try {
     const targetId = props.lead?.leadId || props.lead?.id
+    const rawTags = JSON.parse(JSON.stringify(form.tags || []))
 
+    // BƯỚC QUAN TRỌNG: Đổi tên biến cho khớp 100% với Backend DTO
     const payload = {
-      ...form,
-      id: targetId,
-      leadId: targetId,
-      tagsId: form.tags,   // Dự phòng backend dùng tagsId
-      tagsIds: form.tags   // Dự phòng backend dùng tagsIds
+      fullName: form.fullName,
+      phone: form.phone,
+      email: form.email,
+      // Đổi birthYear thành birthDate (VD: "01/01/2006") để Backend đọc được
+      birthDate: form.birthYear ? `01/01/${form.birthYear}` : null,
+      sourceId: form.sourceId,
+      statusId: form.statusId,
+      assignedTo: form.assignedTo, // Chỉ dùng cho lúc tạo mới
+      note: form.notes, // Sửa 'notes' thành 'note'
+      tags: rawTags
     }
 
     if (isEdit.value) {
       await leadStore.update(targetId, payload)
+
+      if (form.assignedTo && form.assignedTo !== (props.lead?.assignedToId || props.lead?.assignedTo)) {
+        await leadStore.assign(targetId, {
+          assignToUserId: form.assignedTo,
+          note: "Cập nhật lại từ form chỉnh sửa"
+        })
+      }
     } else {
+      // Tạo mới hồ sơ
       await leadStore.create(payload)
     }
 
