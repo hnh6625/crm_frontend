@@ -1,4 +1,3 @@
-<!-- src/views/leads/LeadDetailView.vue -->
 <template>
   <div v-if="loading" class="detail-loading">
     <el-skeleton :rows="8" animated/>

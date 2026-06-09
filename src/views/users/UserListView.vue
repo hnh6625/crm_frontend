@@ -174,16 +174,16 @@ async function resetPassword(row) {
     dangerouslyUseHTMLString: true, type: 'warning',
     confirmButtonText: 'Reset', cancelButtonText: 'Huỷ',
   })
-  await userStore.resetPassword(row.id)
+  await userStore.resetPassword(row.userId)
 }
 
 async function unlock(row) {
-  await userStore.unlock(row.id)
+  await userStore.unlock(row.userId)
   fetchList()
 }
 
 async function toggleStatus(row, status) {
-  await userStore.updateStatus(row.id, status)
+  await userStore.updateStatus(row.userId, status)
   fetchList()
 }
 
@@ -193,7 +193,7 @@ async function confirmDelete(row) {
     'Xác nhận xoá',
     { dangerouslyUseHTMLString: true, type: 'warning', confirmButtonText: 'Xoá', cancelButtonText: 'Huỷ' }
   )
-  await userStore.remove(row.id)
+  await userStore.remove(row.userId)
   fetchList()
 }
 

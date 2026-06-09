@@ -18,15 +18,15 @@
       >
         <el-form-item label="Mật khẩu hiện tại" prop="oldPassword">
           <el-input v-model="form.oldPassword" type="password" show-password
-                    placeholder="Nhập mật khẩu hiện tại" size="large" />
+                    placeholder="Nhập mật khẩu hiện tại" size="large"/>
         </el-form-item>
         <el-form-item label="Mật khẩu mới" prop="newPassword">
           <el-input v-model="form.newPassword" type="password" show-password
-                    placeholder="Tối thiểu 6 ký tự" size="large" />
+                    placeholder="Tối thiểu 6 ký tự" size="large"/>
         </el-form-item>
         <el-form-item label="Xác nhận mật khẩu mới" prop="confirmPassword">
           <el-input v-model="form.confirmPassword" type="password" show-password
-                    placeholder="Nhập lại mật khẩu mới" size="large" />
+                    placeholder="Nhập lại mật khẩu mới" size="large"/>
         </el-form-item>
 
         <el-button
@@ -44,27 +44,27 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { ElMessage }     from 'element-plus'
-import { authApi }       from '@/api/auth.api'
-import { useAuthStore }  from '@/stores/auth.store'
-import { useRouter }     from 'vue-router'
+import {ref, reactive} from 'vue'
+import {ElMessage} from 'element-plus'
+import {authApi} from '@/api/auth.api'
+import {useAuthStore} from '@/stores/auth.store'
+import {useRouter} from 'vue-router'
 
-const router    = useRouter()
+const router = useRouter()
 const authStore = useAuthStore()
-const formRef   = ref()
-const loading   = ref(false)
+const formRef = ref()
+const loading = ref(false)
 
-const form = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const form = reactive({oldPassword: '', newPassword: '', confirmPassword: ''})
 
 const rules = {
-  oldPassword:     [{ required: true, message: 'Vui lòng nhập mật khẩu hiện tại', trigger: 'blur' }],
-  newPassword:     [
-    { required: true, message: 'Vui lòng nhập mật khẩu mới', trigger: 'blur' },
-    { min: 6, message: 'Mật khẩu tối thiểu 6 ký tự', trigger: 'blur' },
+  oldPassword: [{required: true, message: 'Vui lòng nhập mật khẩu hiện tại', trigger: 'blur'}],
+  newPassword: [
+    {required: true, message: 'Vui lòng nhập mật khẩu mới', trigger: 'blur'},
+    {min: 6, message: 'Mật khẩu tối thiểu 6 ký tự', trigger: 'blur'},
   ],
   confirmPassword: [
-    { required: true, message: 'Vui lòng xác nhận mật khẩu', trigger: 'blur' },
+    {required: true, message: 'Vui lòng xác nhận mật khẩu', trigger: 'blur'},
     {
       validator: (rule, val, cb) =>
         val !== form.newPassword ? cb(new Error('Mật khẩu xác nhận không khớp')) : cb(),
@@ -77,7 +77,11 @@ async function submit() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await authApi.changePassword({ oldPassword: form.oldPassword, newPassword: form.newPassword })
+    await authApi.changePassword({
+      oldPassword: form.oldPassword,
+      newPassword: form.newPassword,
+      confirmPassword: form.confirmPassword
+    })
     ElMessage.success('Đổi mật khẩu thành công!')
     // update local user to clear mustChange flag
     if (authStore.user) {
@@ -108,16 +112,19 @@ async function submit() {
   padding: 40px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 4px 24px rgba(16,24,40,0.08);
+  box-shadow: 0 4px 24px rgba(16, 24, 40, 0.08);
   text-align: center;
 }
 
 .cp-icon {
-  width: 64px; height: 64px;
-  background: rgba(255,137,40,0.1);
-  border: 1px solid rgba(255,137,40,0.25);
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 137, 40, 0.1);
+  border: 1px solid rgba(255, 137, 40, 0.25);
   border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 auto 20px;
 }
 
