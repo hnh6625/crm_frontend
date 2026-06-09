@@ -1,0 +1,47 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Base */
+*, *::before, *::after { box-sizing: border-box; }
+body { font-family: 'Be Vietnam Pro', sans-serif; background: #f0f2f5; color: #101828; }
+
+/* Material Icons */
+.icon {
+  font-family: 'Material Symbols Rounded';
+  font-size: 20px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+  user-select: none;
+}
+.icon-sm  { font-size: 16px; }
+.icon-lg  { font-size: 24px; }
+.icon-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+/* Override Element Plus màu primary */
+:root {
+  --el-color-primary:         #001e40;
+  --el-color-primary-light-3: #1a3a5c;
+  --el-color-primary-light-5: #4d7399;
+  --el-color-primary-light-7: #80a3bf;
+  --el-color-primary-light-9: #ccd9e6;
+  --el-color-primary-dark-2:  #001228;
+  --el-border-radius-base:    6px;
+  --el-font-family:           'Be Vietnam Pro', sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c4c9d4; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #98a2b3; }
+
+/* Transition page */
+.page-enter-active, .page-leave-active { transition: opacity 0.15s ease; }
+.page-enter-from, .page-leave-to       { opacity: 0; }
