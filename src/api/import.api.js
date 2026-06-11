@@ -11,4 +11,7 @@ export const importApi = {
   getStatus: id     => api.get(`/api/imports/${id}/status`),
   getHistory: params => api.get('/api/imports', { params }),
   getErrors:  id     => api.get(`/api/imports/${id}/errors`),
+  downloadTemplate: () => {
+    return api.get('/api/imports/template', { responseType: 'blob' })
+  }
 }

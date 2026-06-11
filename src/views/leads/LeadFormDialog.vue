@@ -15,6 +15,26 @@
       class="lead-form"
     >
       <div class="form-grid">
+        <el-form-item label="Trường học">
+          <el-input v-model="form.schoolName" />
+        </el-form-item>
+
+        <el-form-item label="Năm tốt nghiệp">
+          <el-input-number
+            v-model="form.graduationYear"
+            :min="2000"
+            :max="2100"
+            style="width:100%"
+          />
+        </el-form-item>
+
+        <el-form-item label="Địa chỉ">
+          <el-input v-model="form.address" />
+        </el-form-item>
+
+        <el-form-item label="Quê quán">
+          <el-input v-model="form.province" /> // thêm
+        </el-form-item>
         <el-form-item label="Họ và tên" prop="fullName">
           <el-input v-model="form.fullName" placeholder="Nguyễn Văn A" />
         </el-form-item>
@@ -126,6 +146,11 @@ const form = reactive({
   phone: '',
   email: '',
   birthYear: null,
+  schoolName: '',
+  graduationYear: null, // thêm
+
+  address: '',
+  province: '',
   sourceId: null,
   statusId: null,
   assignedTo: null,
@@ -150,7 +175,11 @@ const rules = {
 onMounted(async () => {
   try {
     const res = await userApi.getConsultants()
-    consultants.value = res.data?.data || []
+
+    console.log("FULL RESPONSE =", res)
+    console.log("DATA =", res.data)
+
+    consultants.value = res.data?.data || res.data || []
   } catch (e) {
     console.error('Lỗi khi tải danh sách tư vấn viên:', e)
   }
@@ -163,11 +192,15 @@ watch(() => props.lead, lead => {
       phone: lead.phone || '',
       email: lead.email || '',
       birthYear: lead.birthYear || null,
+      schoolName: props.lead.schoolName,
+      graduationYear: props.lead.graduationYear,
+      address: props.lead.address, // thêm
+      province: props.lead.province,
       sourceId: lead.sourceId || null,
       statusId: lead.statusId || null,
       assignedTo: lead.assignedTo || lead.consultantId || null,
       tags: lead.tags || lead.tagsId || lead.tagsIds || [],
-      notes: lead.notes || '',
+      notes: lead.note || '', // sửa notes thành note
     })
   } else {
     resetForm()
@@ -186,7 +219,7 @@ async function submit() {
   loading.value = true
   try {
     const targetId = props.lead?.leadId || props.lead?.id
-    const rawTags = JSON.parse(JSON.stringify(form.tags || []))
+    const rawTags = (form.tags || []).map(t => typeof t === 'object' ? t.tagName : t) // sửa lạinpm
 
     // BƯỚC QUAN TRỌNG: Đổi tên biến cho khớp 100% với Backend DTO
     const payload = {
@@ -195,13 +228,19 @@ async function submit() {
       email: form.email,
       // Đổi birthYear thành birthDate (VD: "01/01/2006") để Backend đọc được
       birthDate: form.birthYear ? `01/01/${form.birthYear}` : null,
+      schoolName: form.schoolName,
+      graduationYear: form.graduationYear,
+
+      address: form.address,
+      province: form.province, // thêm
+
       sourceId: form.sourceId,
       statusId: form.statusId,
       assignedTo: form.assignedTo, // Chỉ dùng cho lúc tạo mới
       note: form.notes, // Sửa 'notes' thành 'note'
       tags: rawTags
     }
-
+    console.log("PAYLOAD GỬI LÊN =", JSON.stringify(payload)) // thêm dòng này
     if (isEdit.value) {
       await leadStore.update(targetId, payload)
 
@@ -211,6 +250,7 @@ async function submit() {
           note: "Cập nhật lại từ form chỉnh sửa"
         })
       }
+
     } else {
       // Tạo mới hồ sơ
       await leadStore.create(payload)

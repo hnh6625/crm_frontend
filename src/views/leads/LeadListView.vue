@@ -203,7 +203,7 @@ onMounted(async () => {
   if (authStore.isAdmin) {
     try {
       const res = await userApi.getConsultants()
-      consultants.value = res.data?.data || res.data || []
+      consultants.value = res.data?.data || res.data || [] // thêm
     } catch (e) {
       console.error('Không thể lấy danh sách tư vấn viên:', e)
     }

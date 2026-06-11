@@ -11,6 +11,28 @@
 *, *::before, *::after { box-sizing: border-box; }
 body { font-family: 'Be Vietnam Pro', sans-serif; background: #f0f2f5; color: #101828; }
 
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+ /*Reset luôn id app của Vue  */
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none; /* Xóa giới hạn kích thước nếu có */
+}
+
+/* Chỉnh box-sizing chuẩn cho toàn bộ thẻ */
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
 /* Material Icons */
 .icon {
   font-family: 'Material Symbols Rounded';

@@ -28,7 +28,7 @@ export const useLeadStore = defineStore('lead', () => {
     ])
     sources.value  = s.data || []
     statuses.value = st.data || []
-    tags.value     = t.data || []
+    tags.value     = (t.data?.data || t.data || []).map(t => t.tagName) // thêm
   }
 
   async function create(data) {

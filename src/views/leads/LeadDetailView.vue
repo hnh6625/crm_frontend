@@ -138,8 +138,8 @@
 
     <!-- Dialogs -->
     <LeadFormDialog v-model="showEdit" :lead="lead" @saved="reload"/>
-    <CallLogDialog v-model="showCallLog" :lead-id="lead.id" @saved="loadCalls"/>
-    <FollowUpDialog v-model="showFollowUp" :lead-id="lead.id" @saved="loadFollowUps"/>
+    <CallLogDialog v-model="showCallLog" :lead-id="lead.leadId" @saved="loadCalls"/>
+    <FollowUpDialog v-model="showFollowUp" :lead-id="lead.leadId" @saved="loadFollowUps"/>
 
     <el-dialog v-model="showEnrollment" title="Thêm đăng ký nhập học" width="500px"
                destroy-on-close>
@@ -191,12 +191,18 @@ const infoFields = computed(() => [
   {label: 'Họ và tên', value: lead.value?.fullName},
   {label: 'SĐT', value: lead.value?.phone},
   {label: 'Email', value: lead.value?.email},
-  {label: 'Năm sinh', value: lead.value?.birthYear },
+  {label: 'Năm sinh', value: lead.value?.birthDate }, // birthYear -> birthDate
+  { label: 'Trường học', value: lead.value?.schoolName },
+  { label: 'Năm tốt nghiệp', value: lead.value?.graduationYear },
+
+  { label: 'Địa chỉ', value: lead.value?.address },
+  { label: 'Quê quán', value: lead.value?.province },
   {label: 'Nguồn', value: lead.value?.sourceName || '-'},
   { label: 'Trạng thái', value: lead.value?.statusName || '-' },
   {label: 'Tags', value: (lead.value?.tags || []).join(', ')},
-  {label: 'Tư vấn viên', value: lead.value?.consultantName},
-  {label: 'Ghi chú', value: lead.value?.notes},
+  {label: 'Tư vấn viên', value: lead.value?.assignedToName},
+  {label: 'Ghi chú', value: lead.value?.note },
+
 ])
 
 // Tải toàn bộ dữ liệu trang chi tiết
@@ -219,6 +225,8 @@ async function reload() {
     console.log("API FULL RESPONSE =", res)
     console.log("API DATA =", res.data)
     lead.value = res.data?.data || res.data // Tự động bóc tách JSON
+    console.log('LEAD DETAIL =', lead.value)
+    console.log("Lead Detail =", lead.value)
 
     // Đợi tải xong thông tin cơ bản rồi tải tiếp các danh sách phụ
     await Promise.all([
