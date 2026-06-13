@@ -12,7 +12,7 @@
           :prefix-icon="Search"
           @input="debounceFetch"
         />
-        <el-select v-model="filters.source" placeholder="Nguồn" clearable style="width: 140px" @change="handleFilterChange">
+        <el-select v-model="filters.sourceId" placeholder="Nguồn" clearable style="width: 140px" @change="handleFilterChange">
           <el-option
             v-for="src in leadStore.sources"
             :key="src.sourceId"
@@ -21,7 +21,7 @@
           />
         </el-select>
 
-        <el-select v-model="filters.status" placeholder="Trạng thái" clearable style="width: 140px" @change="handleFilterChange">
+        <el-select v-model="filters.statusId" placeholder="Trạng thái" clearable style="width: 140px" @change="handleFilterChange">
           <el-option
             v-for="st in (leadStore.statuses || [])"
             :key="st.statusId"
@@ -186,7 +186,7 @@ const authStore = useAuthStore()
 const tableRef = ref(null) // Dùng để clear selection
 const page = ref(1)
 const pageSize = ref(20)
-const filters = reactive({ keyword: '', status: '', source: '', consultantId: '' })
+const filters = reactive({ keyword: '', statusId: '', sourceId: '', consultantId: '' })
 
 const showForm = ref(false)
 const editLead = ref(null)
@@ -217,8 +217,8 @@ function fetchLeads() {
     size: pageSize.value,
     sort: 'createdAt,desc',
     keyword: filters.keyword || undefined,
-    status: filters.status || undefined,
-    source: filters.source || undefined,
+    statusId: filters.statusId || undefined,
+    sourceId: filters.sourceId || undefined,
     consultantId: filters.consultantId || undefined,
   }
   leadStore.fetchList(params)

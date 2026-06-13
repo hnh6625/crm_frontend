@@ -14,10 +14,16 @@ export const useLeadStore = defineStore('lead', () => {
   async function fetchList(params) {
     loading.value = true
     try {
-      const res   = await leadApi.getList(params)
-      list.value  = res.data.content
-      total.value = res.data.totalElements
-    } finally { loading.value = false }
+      const res = await leadApi.getList(params)
+      list.value = res.data.content || []
+
+      total.value = res.data.page?.totalElements || res.data.totalElements || 0
+
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách lead:", error)
+    } finally {
+      loading.value = false
+    }
   }
 
   async function fetchDropdowns() {

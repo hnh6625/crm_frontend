@@ -1,8 +1,6 @@
-<!-- src/views/dashboard/DashboardView.vue -->
 <template>
   <div class="dashboard">
 
-    <!-- Stat cards -->
     <div class="stats-grid">
       <div class="stat-card" v-for="s in stats" :key="s.label">
         <div class="stat-icon" :style="{ background: s.bg }">
@@ -12,20 +10,17 @@
           <div class="stat-value">{{ s.value }}</div>
           <div class="stat-label">{{ s.label }}</div>
         </div>
-        <div class="stat-trend" :class="s.trend >= 0 ? 'up' : 'down'">
+        <div class="stat-trend" :class="s.trend >= 0 ? 'up' : 'down'" v-if="s.trend !== 0">
           <span class="icon icon-sm">{{ s.trend >= 0 ? 'trending_up' : 'trending_down' }}</span>
           {{ Math.abs(s.trend) }}%
         </div>
       </div>
     </div>
 
-    <!-- Charts row -->
     <div class="charts-row">
-      <!-- Lead theo trạng thái -->
       <div class="card chart-card">
         <div class="card-title-row">
-          <span class="card-title">Hồ sơ theo trạng thái</span>
-          <el-tag size="small" type="info">Tháng này</el-tag>
+          <span class="card-title">Hồ sơ theo trạng thái (Toàn hệ thống)</span>
         </div>
         <div v-if="loadingStats" class="chart-skeleton">
           <el-skeleton :rows="4" animated />
@@ -48,7 +43,6 @@
         </div>
       </div>
 
-      <!-- My follow-ups -->
       <div class="card followup-card">
         <div class="card-title-row">
           <span class="card-title">Lịch follow-up hôm nay</span>
@@ -71,7 +65,7 @@
           >
             <div class="fu-dot" :class="f.status.toLowerCase()" />
             <div class="fu-body">
-              <div class="fu-name">{{ f.leadName }}</div>
+              <div class="fu-name">{{ f.leadName || 'Hồ sơ chưa có tên' }}</div>
               <div class="fu-note">{{ f.note || 'Không có ghi chú' }}</div>
             </div>
             <div class="fu-time">{{ formatTime(f.followUpTime) }}</div>
@@ -88,7 +82,6 @@
       </div>
     </div>
 
-    <!-- Recent leads -->
     <div class="card recent-card">
       <div class="card-title-row">
         <span class="card-title">Hồ sơ gần đây</span>
@@ -102,19 +95,19 @@
         size="small"
         style="width:100%"
         row-class-name="clickable-row"
-        @row-click="row => router.push('/leads/' + row.id)"
+        @row-click="row => router.push('/leads/' + (row.leadId || row.id))"
       >
-        <el-table-column prop="fullName"  label="Họ tên"       min-width="160" />
-        <el-table-column prop="phone"     label="SĐT"          width="130" />
-        <el-table-column prop="source"    label="Nguồn"        width="120" />
-        <el-table-column prop="status"    label="Trạng thái"   width="150">
+        <el-table-column prop="fullName"       label="Họ tên"       min-width="160" />
+        <el-table-column prop="phone"          label="SĐT"          width="130" />
+        <el-table-column prop="sourceName"     label="Nguồn"        width="120" />
+        <el-table-column prop="statusName"     label="Trạng thái"   width="150">
           <template #default="{ row }">
-            <el-tag size="small" :type="LEAD_STATUS_COLORS[row.status] || ''">
-              {{ row.status }}
+            <el-tag size="small" :type="LEAD_STATUS_COLORS[row.statusName] || ''">
+              {{ row.statusName }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="consultantName" label="Tư vấn viên" width="160" />
+        <el-table-column prop="assignedToName" label="Tư vấn viên" width="160" />
         <el-table-column prop="createdAt"      label="Ngày tạo"    width="140">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
@@ -129,6 +122,7 @@ import { useRouter }      from 'vue-router'
 import { leadApi }        from '@/api/lead.api'
 import { callApi }        from '@/api/call.api'
 import { LEAD_STATUS_COLORS } from '@/constants/status'
+import { ElMessage }      from 'element-plus'
 import dayjs              from 'dayjs'
 
 const router = useRouter()
@@ -138,10 +132,10 @@ const loadingLeads    = ref(false)
 const loadingFollowUps = ref(false)
 
 const stats = ref([
-  { label: 'Tổng hồ sơ',    value: '—', icon: 'contact_page',   color: '#2e90fa', bg: 'rgba(46,144,250,0.1)', trend: 0 },
-  { label: 'Đã nhập học',   value: '—', icon: 'school',         color: '#12b76a', bg: 'rgba(18,183,106,0.1)', trend: 0 },
-  { label: 'Đang liên hệ',  value: '—', icon: 'phone_in_talk',  color: '#f79009', bg: 'rgba(247,144,9,0.1)',  trend: 0 },
-  { label: 'Follow-up hôm nay', value: '—', icon: 'event',      color: '#ff8928', bg: 'rgba(255,137,40,0.1)', trend: 0 },
+  { label: 'Tổng hồ sơ',    value: '0', icon: 'contact_page',   color: '#2e90fa', bg: 'rgba(46,144,250,0.1)', trend: 0 },
+  { label: 'Đã nhập học',   value: '0', icon: 'school',         color: '#12b76a', bg: 'rgba(18,183,106,0.1)', trend: 0 },
+  { label: 'Đang liên hệ',  value: '0', icon: 'phone_in_talk',  color: '#f79009', bg: 'rgba(247,144,9,0.1)',  trend: 0 },
+  { label: 'Follow-up hôm nay', value: '0', icon: 'event',      color: '#ff8928', bg: 'rgba(255,137,40,0.1)', trend: 0 },
 ])
 
 const leadStatusData = ref([])
@@ -156,31 +150,51 @@ async function loadLeads() {
   loadingStats.value = true
   loadingLeads.value = true
   try {
-    const res = await leadApi.getList({ page: 0, size: 10, sort: 'createdAt,desc' })
-    const data = res.data
-    recentLeads.value = data.content || []
+    // 1. Lấy 5 hồ sơ mới nhất cho Bảng "Hồ sơ gần đây"
+    const resRecent = await leadApi.getList({ page: 0, size: 5, sort: 'createdAt,desc' })
+    recentLeads.value = resRecent.data?.content || resRecent.data || []
 
-    // Build status breakdown
+    // 2. Lấy dữ liệu tổng quan cho Thống kê (Giả lập việc lấy data tổng bằng size lớn)
+    const resAll = await leadApi.getList({ page: 0, size: 10000 })
+    const allLeads = resAll.data?.content || resAll.data || []
+
+    // Cập nhật thẻ Tổng hồ sơ
+    stats.value[0].value = resAll.data?.totalElements?.toString() || allLeads.length.toString()
+
+    // Phân tích dữ liệu Trạng thái
     const statusMap = {}
-    recentLeads.value.forEach(l => {
-      statusMap[l.status] = (statusMap[l.status] || 0) + 1
+    let enrolledCount = 0
+    let inContactCount = 0
+
+    allLeads.forEach(l => {
+      // Đã sửa thành statusName cho chuẩn DTO
+      const st = l.statusName || 'Khác'
+      statusMap[st] = (statusMap[st] || 0) + 1
+
+      if (st === 'Đã nhập học' || st === 'Nhập học') enrolledCount++
+      if (st === 'Đang liên hệ') inContactCount++
     })
-    const total = recentLeads.value.length || 1
+
+    stats.value[1].value = enrolledCount.toString()
+    stats.value[2].value = inContactCount.toString()
+
+    // Build dữ liệu cho Biểu đồ thanh ngang
+    const total = allLeads.length || 1
     const colorMap = {
       'Mới': '#2e90fa', 'Đang liên hệ': '#f79009', 'Quan tâm': '#a855f7',
       'Đã tư vấn': '#001e40', 'Đã nhập học': '#12b76a', 'Từ chối': '#f04438',
     }
-    leadStatusData.value = Object.entries(statusMap).map(([label, count]) => ({
-      label, count,
-      pct: Math.round((count / total) * 100),
-      color: colorMap[label] || '#98a2b3',
-    }))
 
-    stats.value[0].value = data.totalElements?.toString() || '—'
-    const enrolled = (data.content || []).filter(l => l.status === 'Đã nhập học').length
-    stats.value[1].value = enrolled.toString()
-    const inContact = (data.content || []).filter(l => l.status === 'Đang liên hệ').length
-    stats.value[2].value = inContact.toString()
+    leadStatusData.value = Object.entries(statusMap)
+      .map(([label, count]) => ({
+        label, count,
+        pct: Math.round((count / total) * 100),
+        color: colorMap[label] || '#98a2b3',
+      }))
+      .sort((a, b) => b.count - a.count) // Sắp xếp trạng thái nào nhiều nhất lên đầu
+
+  } catch (e) {
+    console.error("Lỗi lấy dữ liệu Dashboard:", e)
   } finally {
     loadingStats.value = false
     loadingLeads.value = false
@@ -192,18 +206,28 @@ async function loadFollowUps() {
   try {
     const res = await callApi.getMyFollowUps()
     const today = dayjs().format('YYYY-MM-DD')
-    myFollowUps.value = (res.data || []).filter(f =>
+    const allFollowUps = res.data?.data || res.data || []
+
+    myFollowUps.value = allFollowUps.filter(f =>
       f.status === 'PENDING' && dayjs(f.followUpTime).format('YYYY-MM-DD') === today
     )
     stats.value[3].value = myFollowUps.value.length.toString()
+  } catch (e) {
+    console.error("Lỗi lấy Follow-up:", e)
   } finally {
     loadingFollowUps.value = false
   }
 }
 
 async function markDone(f) {
-  await callApi.updateFollowUp(f.id, 'DONE')
-  myFollowUps.value = myFollowUps.value.filter(x => x.id !== f.id)
+  try {
+    await callApi.updateFollowUp(f.id || f.followUpId, 'DONE')
+    myFollowUps.value = myFollowUps.value.filter(x => (x.id || x.followUpId) !== (f.id || f.followUpId))
+    stats.value[3].value = myFollowUps.value.length.toString()
+    ElMessage.success("Đã hoàn tất lịch hẹn!")
+  } catch (e) {
+    ElMessage.error("Lỗi khi cập nhật trạng thái!",e)
+  }
 }
 
 function formatDate(v) { return v ? dayjs(v).format('DD/MM/YYYY') : '—' }
@@ -211,6 +235,7 @@ function formatTime(v) { return v ? dayjs(v).format('HH:mm') : '—' }
 </script>
 
 <style scoped>
+/* Giữ nguyên toàn bộ CSS cũ của bạn, không cần thay đổi gì ở đây */
 .dashboard { display: flex; flex-direction: column; gap: 20px; }
 
 /* Stat cards */
