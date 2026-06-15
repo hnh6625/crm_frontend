@@ -32,8 +32,10 @@
           <el-input v-model="form.address" />
         </el-form-item>
 
-        <el-form-item label="Quê quán">
-          <el-input v-model="form.province" /> // thêm
+        <el-form-item label="Tỉnh/Thành phố" prop="province">
+          <el-select v-model="form.province" placeholder="Chọn tỉnh thành" style="width:100%" filterable>
+            <el-option v-for="p in provinces" :key="p" :label="p" :value="p" />
+          </el-select>
         </el-form-item>
         <el-form-item label="Họ và tên" prop="fullName">
           <el-input v-model="form.fullName" placeholder="Nguyễn Văn A" />
@@ -44,8 +46,15 @@
         <el-form-item label="Email" prop="email">
           <el-input v-model="form.email" placeholder="example@email.com" />
         </el-form-item>
-        <el-form-item label="Năm sinh" prop="birthYear">
-          <el-input v-model.number="form.birthYear" placeholder="2006" type="number" />
+        <el-form-item label="Ngày sinh" prop="birthDate">
+          <el-date-picker
+            v-model="form.birthDate"
+            type="date"
+            placeholder="Chọn ngày sinh"
+            format="DD/MM/YYYY"
+            value-format="YYYY-MM-DD"
+            style="width:100%"
+          />
         </el-form-item>
         <el-form-item label="Nguồn" prop="sourceId">
           <el-select v-model="form.sourceId" placeholder="Chọn nguồn" style="width:100%" filterable>
@@ -141,11 +150,19 @@ const formRef = ref()
 const loading = ref(false)
 const consultants = ref([])
 
+const provinces = [
+  "An Giang", "Bắc Ninh", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắk Lắk", "Điện Biên",
+  "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Nội", "Hà Tĩnh", "Hải Phòng", "Huế", "Hưng Yên",
+  "Khánh Hòa", "Lai Châu", "Lạng Sơn", "Lào Cai", "Lâm Đồng", "Nghệ An", "Ninh Bình", "Phú Thọ",
+  "Quảng Ninh", "Quảng Trị", "Quảng Ngãi", "Sơn La", "Tây Ninh", "Thái Nguyên", "Thanh Hóa",
+  "TP Hồ Chí Minh", "Tuyên Quang", "Vĩnh Long"
+]
+
 const form = reactive({
   fullName: '',
   phone: '',
   email: '',
-  birthYear: null,
+  birthDate: null,
   schoolName: '',
   graduationYear: null, // thêm
 
@@ -191,14 +208,14 @@ watch(() => props.lead, lead => {
       fullName: lead.fullName || '',
       phone: lead.phone || '',
       email: lead.email || '',
-      birthYear: lead.birthYear || null,
+      birthDate: lead.birthDate || null,
       schoolName: props.lead.schoolName,
       graduationYear: props.lead.graduationYear,
       address: props.lead.address, // thêm
       province: props.lead.province,
       sourceId: lead.sourceId || null,
       statusId: lead.statusId || null,
-      assignedTo: lead.assignedTo || lead.consultantId || null,
+      assignedTo: lead.assignedToId || lead.consultantId || null,
       tags: lead.tags || lead.tagsId || lead.tagsIds || [],
       notes: lead.note || '', // sửa notes thành note
     })
@@ -221,26 +238,23 @@ async function submit() {
     const targetId = props.lead?.leadId || props.lead?.id
     const rawTags = (form.tags || []).map(t => typeof t === 'object' ? t.tagName : t) // sửa lạinpm
 
-    // BƯỚC QUAN TRỌNG: Đổi tên biến cho khớp 100% với Backend DTO
     const payload = {
       fullName: form.fullName,
       phone: form.phone,
       email: form.email,
-      // Đổi birthYear thành birthDate (VD: "01/01/2006") để Backend đọc được
-      birthDate: form.birthYear ? `01/01/${form.birthYear}` : null,
+      birthDate: form.birthDate,
       schoolName: form.schoolName,
       graduationYear: form.graduationYear,
 
       address: form.address,
-      province: form.province, // thêm
+      province: form.province,
 
       sourceId: form.sourceId,
       statusId: form.statusId,
-      assignedTo: form.assignedTo, // Chỉ dùng cho lúc tạo mới
-      note: form.notes, // Sửa 'notes' thành 'note'
+      assignedTo: form.assignedTo,
+      note: form.notes,
       tags: rawTags
     }
-    console.log("PAYLOAD GỬI LÊN =", JSON.stringify(payload)) // thêm dòng này
     if (isEdit.value) {
       await leadStore.update(targetId, payload)
 

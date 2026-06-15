@@ -141,8 +141,12 @@
     <CallLogDialog v-model="showCallLog" :lead-id="lead.leadId" @saved="reload"/>
     <FollowUpDialog v-model="showFollowUp" :lead-id="lead.leadId" @saved="loadFollowUps"/>
 
-    <el-dialog v-model="showEnrollment" title="Thêm đăng ký nhập học" width="500px" destroy-on-close>
-      <EnrollmentFormInline :lead-id="lead.leadId" @saved="onEnrollmentSaved"/>
+    <el-dialog v-model="showEnrollment" title="Chốt hồ sơ nhập học" width="500px" destroy-on-close>
+      <EnrollmentFormInline
+        :lead-id="lead.leadId"
+        @saved="onEnrollmentSaved"
+        @cancel="showEnrollment = false"
+      />
     </el-dialog>
   </div>
 </template>
