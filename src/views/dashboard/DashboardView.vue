@@ -102,7 +102,7 @@
         <el-table-column prop="sourceName"     label="Nguồn"        width="120" />
         <el-table-column prop="statusName"     label="Trạng thái"   width="150">
           <template #default="{ row }">
-            <el-tag size="small" :type="LEAD_STATUS_COLORS[row.statusName] || ''">
+            <el-tag size="small" :type="LEAD_STATUS_COLORS[row.statusName] || 'info'">
               {{ row.statusName }}
             </el-tag>
           </template>

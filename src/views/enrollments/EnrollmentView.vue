@@ -1,193 +1,251 @@
-<!-- src/views/enrollments/EnrollmentView.vue -->
 <template>
-  <div class="enrollment-view">
+  <div class="enrollment-page">
+    <div class="page-header">
+      <div class="page-title">
+        <h2>Quản lý Nhập học</h2>
+        <p>Danh sách hồ sơ học viên đã được chốt chuyển sang bộ phận Giáo vụ.</p>
+      </div>
+    </div>
 
-    <!-- Toolbar -->
     <div class="toolbar card">
       <div class="toolbar-filters">
         <el-input
           v-model="filters.keyword"
-          placeholder="Tìm tên sinh viên..."
+          placeholder="Tìm tên, SĐT..."
           clearable
-          style="width:220px"
-          :prefix-icon="Search"
+          style="width:240px"
           @input="debounceFetch"
         />
-        <el-select v-model="filters.status" placeholder="Trạng thái" clearable style="width:160px" @change="fetchList">
-          <el-option
-            v-for="(label, key) in ENROLLMENT_STATUS_LABELS"
-            :key="key"
-            :label="label"
-            :value="key"
-          />
+        <el-select v-model="filters.majorId" placeholder="Khoa / Ngành" clearable style="width:180px" @change="fetchData">
+          <el-option v-for="m in majors" :key="m.majorId || m.id" :label="m.majorName" :value="m.majorId || m.id" />
         </el-select>
-        <el-select v-model="filters.campusId" placeholder="Cơ sở" clearable style="width:150px" @change="fetchList">
-          <el-option v-for="c in campuses" :key="c.id" :label="c.name" :value="c.id" />
-        </el-select>
-        <el-select v-model="filters.semesterId" placeholder="Học kỳ" clearable style="width:160px" @change="fetchList">
-          <el-option v-for="s in semesters" :key="s.id" :label="s.name" :value="s.id" />
+        <el-select v-model="filters.status" placeholder="Trạng thái" clearable style="width:160px" @change="fetchData">
+          <el-option label="Chờ xử lý" value="PENDING" />
+          <el-option label="Đã hoàn tất" value="COMPLETED" />
+          <el-option label="Đã huỷ" value="CANCELLED" />
         </el-select>
       </div>
-      <div class="toolbar-actions">
-        <el-button @click="fetchList">
-          <span class="icon icon-sm">refresh</span>
-        </el-button>
-        <el-button type="primary" @click="openDialog(null)">
-          <span class="icon icon-sm">add</span> Thêm đăng ký
-        </el-button>
-      </div>
+      <el-button @click="fetchData"><span class="icon icon-sm">refresh</span></el-button>
     </div>
 
-    <!-- Table -->
     <div class="card table-card">
-      <el-table
-        :data="store.list"
-        v-loading="store.loading"
-        style="width:100%"
-      >
-        <el-table-column prop="leadName"    label="Sinh viên"       min-width="160" />
-        <el-table-column prop="majorName"   label="Ngành"           min-width="160" />
-        <el-table-column prop="campusName"  label="Cơ sở"           width="140" />
-        <el-table-column prop="semesterName" label="Học kỳ"         width="140" />
-        <el-table-column prop="status"      label="Trạng thái"      width="150">
+      <el-table :data="list" v-loading="loading" style="width:100%">
+        <el-table-column label="Học viên" min-width="180">
           <template #default="{ row }">
-            <el-tag size="small" :type="ENROLLMENT_STATUS_COLORS[row.status]">
-              {{ ENROLLMENT_STATUS_LABELS[row.status] }}
+            <div style="font-weight: 500; color: #101828">{{ row.leadName || row.fullName }}</div>
+            <div style="font-size: 12px; color: #475467">{{ row.leadPhone || row.phone }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="majorName" label="Khoa / Ngành" min-width="150" />
+
+        <el-table-column label="Học phí (VNĐ)" width="150">
+          <template #default="{ row }">
+            <b style="color: #12b76a">{{ row.tuitionFee ? row.tuitionFee.toLocaleString() : '0' }}</b>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="Trạng thái" width="140">
+          <template #default="{ row }">
+            <el-tag :type="getStatusColor(row.enrollmentStatus)" size="small">
+              {{ getStatusLabel(row.enrollmentStatus) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt"   label="Ngày tạo"        width="120">
+
+        <el-table-column label="Ngày ĐK" width="120">
           <template #default="{ row }">{{ fmtDate(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label=""           width="120" fixed="right">
+
+        <el-table-column width="140" align="right">
           <template #default="{ row }">
-            <div style="display:flex;gap:4px">
-              <el-button size="small" text @click="openDialog(row)">
-                <span class="icon icon-sm">edit</span>
-              </el-button>
-              <el-dropdown trigger="click">
-                <el-button size="small" text>
-                  <span class="icon icon-sm">more_horiz</span>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item
-                      v-for="(label, key) in ENROLLMENT_STATUS_LABELS"
-                      :key="key"
-                      @click="changeStatus(row, key)"
-                    >{{ label }}</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
+            <el-button size="small" type="primary" plain @click="openEditDialog(row)">Cập nhật</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="pagination-row">
-        <span class="total-text">Tổng: {{ store.total }} đăng ký</span>
         <el-pagination
           v-model:current-page="page"
           v-model:page-size="pageSize"
-          :page-sizes="[20, 50, 100]"
-          :total="store.total"
-          layout="sizes, prev, pager, next"
-          @change="fetchList"
+          :total="total"
+          layout="total, prev, pager, next"
+          @change="fetchData"
         />
       </div>
     </div>
 
-    <EnrollmentDialog
-      v-model="showDialog"
-      :enrollment="editItem"
-      :campuses="campuses"
-      :majors="majors"
-      :semesters="semesters"
-      @saved="fetchList"
-    />
+    <el-dialog v-model="showEdit" title="Cập nhật hồ sơ nhập học" width="480px" destroy-on-close>
+      <el-form ref="formRef" :model="editForm" :rules="rules" label-position="top">
+        <el-form-item label="Khoa / Ngành học" prop="majorId">
+          <el-select v-model="editForm.majorId" style="width:100%">
+            <el-option v-for="m in majors" :key="m.majorId || m.id" :label="m.majorName" :value="m.majorId || m.id" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="Học phí (10.000.000 - 15.000.000)" prop="tuitionFee">
+          <el-input v-model.number="editForm.tuitionFee" type="number" placeholder="Nhập mức học phí">
+            <template #append>VNĐ</template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item label="Mã sinh viên (Nếu có)" prop="studentCode">
+          <el-input v-model="editForm.studentCode" placeholder="VD: SV2026..." />
+        </el-form-item>
+
+        <el-form-item label="Trạng thái hồ sơ" prop="status">
+          <el-select v-model="editForm.status" style="width:100%">
+            <el-option label="Chờ xử lý" value="PENDING" />
+            <el-option label="Đã hoàn tất" value="COMPLETED" />
+            <el-option label="Đã huỷ" value="CANCELLED" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="Ghi chú">
+          <el-input v-model="editForm.note" type="textarea" :rows="2" placeholder="Ghi chú thêm..." />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEdit = false">Huỷ</el-button>
+        <el-button type="primary" :loading="saving" @click="saveEdit">Cập nhật ngay</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Search }                   from '@element-plus/icons-vue'
-import { useEnrollmentStore }       from '@/stores/enrollment.store'
-import { ENROLLMENT_STATUS_LABELS, ENROLLMENT_STATUS_COLORS } from '@/constants/status'
-import EnrollmentDialog             from './EnrollmentDialog.vue'
-import dayjs                        from 'dayjs'
+import { enrollmentApi } from '@/api/enrollment.api'
+import { ElMessage } from 'element-plus'
+import dayjs from 'dayjs'
 
-const store    = useEnrollmentStore()
-const page     = ref(1)
-const pageSize = ref(20)
-const filters  = reactive({ keyword: '', status: '', campusId: '', semesterId: '' })
+const list = ref([])
+const total = ref(0)
+const loading = ref(false)
+const saving = ref(false)
+const majors = ref([])
 
-const showDialog = ref(false)
-const editItem   = ref(null)
-const campuses   = ref([])
-const majors     = ref([])
-const semesters  = ref([])
+// Phân trang & Lọc
+const page = ref(1)
+const pageSize = ref(15)
+const filters = reactive({ keyword: '', majorId: '', status: '' })
 let debounceTimer = null
 
-onMounted(async () => {
-  await store.fetchDropdowns()
-  campuses.value  = store.campuses
-  majors.value    = store.majors
-  semesters.value = store.semesters
-  fetchList()
+// Form sửa
+const showEdit = ref(false)
+const formRef = ref(null)
+const currentEditId = ref(null)
+
+const editForm = reactive({
+  majorId: '',
+  tuitionFee: 10000000,
+  studentCode: '',
+  status: 'PENDING',
+  note: ''
 })
 
-function fetchList() {
-  store.fetchList({
-    page: page.value - 1,
-    size: pageSize.value,
-    keyword:    filters.keyword    || undefined,
-    status:     filters.status     || undefined,
-    campusId:   filters.campusId   || undefined,
-    semesterId: filters.semesterId || undefined,
-  })
+const rules = {
+  majorId: [{ required: true, message: 'Vui lòng chọn Khoa / Ngành', trigger: 'change' }],
+  tuitionFee: [
+    { required: true, message: 'Vui lòng nhập học phí' },
+    { type: 'number', min: 10000000, max: 15000000, message: 'Học phí phải nằm trong khoảng 10,000,000 - 15,000,000 VNĐ', trigger: 'blur' }
+  ]
+}
+
+onMounted(async () => {
+  await loadMajors()
+  fetchData()
+})
+
+async function loadMajors() {
+  try {
+    const res = await enrollmentApi.getMajors()
+    majors.value = res.data?.data || []
+  } catch (e) {
+    console.error("Lỗi lấy danh sách ngành:", e)
+  }
+}
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const params = {
+      page: page.value - 1,
+      size: pageSize.value,
+      keyword: filters.keyword || undefined,
+      majorId: filters.majorId || undefined,
+      status: filters.status || undefined
+    }
+    const res = await enrollmentApi.getList(params)
+    list.value = res.data?.data?.content || res.data?.data || []
+    total.value = res.data?.data?.totalElements || res.data?.totalElements || list.value.length || 0
+  } catch (e) {
+    ElMessage.error("Lỗi khi tải danh sách nhập học",e)
+  } finally {
+    loading.value = false
+  }
 }
 
 function debounceFetch() {
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(fetchList, 400)
+  debounceTimer = setTimeout(() => { page.value = 1; fetchData() }, 400)
 }
 
-function openDialog(item) {
-  editItem.value  = item
-  showDialog.value = true
+function openEditDialog(row) {
+  currentEditId.value = row.id || row.enrollmentId
+  editForm.majorId = row.majorId
+  editForm.tuitionFee = row.tuitionFee || 10000000
+  editForm.studentCode = row.studentCode || ''
+  editForm.status = row.enrollmentStatus || 'PENDING'
+  editForm.note = row.note || ''
+  showEdit.value = true
 }
 
-async function changeStatus(row, status) {
-  await store.updateStatus(row.id, status)
-  fetchList()
+async function saveEdit() {
+  await formRef.value.validate()
+  saving.value = true
+  try {
+    // 1. Cập nhật thông tin cơ bản
+    await enrollmentApi.update(currentEditId.value, {
+      majorId: editForm.majorId,
+      tuitionFee: editForm.tuitionFee,
+      studentCode: editForm.studentCode,
+      note: editForm.note
+    })
+
+    // 2. Cập nhật trạng thái qua API riêng
+    await enrollmentApi.updateStatus(currentEditId.value, editForm.status)
+
+    ElMessage.success("Cập nhật hồ sơ thành công!")
+    showEdit.value = false
+    fetchData()
+  } catch (e) {
+    console.error(e)
+    const errorMap = e.response?.data?.data
+    if (errorMap && typeof errorMap === 'object') {
+      ElMessage.error(Object.values(errorMap).join(' | '))
+    } else {
+      ElMessage.error(e.response?.data?.message || "Lỗi khi cập nhật")
+    }
+  } finally {
+    saving.value = false
+  }
 }
 
+function getStatusLabel(st) {
+  const map = { PENDING: 'Chờ xử lý', COMPLETED: 'Đã hoàn tất', CANCELLED: 'Đã huỷ' }
+  return map[st] || st || 'PENDING'
+}
+function getStatusColor(st) {
+  const map = { PENDING: 'warning', COMPLETED: 'success', CANCELLED: 'danger' }
+  return map[st] || 'info'
+}
 function fmtDate(v) { return v ? dayjs(v).format('DD/MM/YYYY') : '—' }
 </script>
 
 <style scoped>
-.enrollment-view { display: flex; flex-direction: column; gap: 16px; }
-
-.card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(16,24,40,0.08);
-}
-
-.toolbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; gap: 12px; flex-wrap: wrap;
-}
-
+.enrollment-page { display: flex; flex-direction: column; gap: 16px; }
+.card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(16,24,40,0.08); }
+.toolbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
 .toolbar-filters { display: flex; gap: 8px; flex-wrap: wrap; }
-.toolbar-actions { display: flex; gap: 8px; }
-.table-card { overflow: hidden; }
-
-.pagination-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px;
-  border-top: 1px solid #f0f2f5;
-}
-
-.total-text { font-size: 13px; color: #475467; }
+.pagination-row { padding: 12px 16px; display: flex; justify-content: flex-end; border-top: 1px solid #f0f2f5; }
 </style>
