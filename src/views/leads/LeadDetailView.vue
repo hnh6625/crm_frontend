@@ -124,7 +124,7 @@
           <div class="section-title">Lịch sử hệ thống</div>
           <el-timeline>
             <el-timeline-item
-              v-for="h in history"
+              v-for="h in paginatedHistory"
               :key="h.id || h.historyId"
               :timestamp="fmtDateTime(h.createdAt)"
               placement="top"
@@ -133,6 +133,15 @@
               <div class="history-by">{{ h.createdBy || 'Hệ thống' }}</div>
             </el-timeline-item>
           </el-timeline>
+          <div class="history-pagination" v-if="history.length > historyPageSize">
+            <el-pagination
+              v-model:current-page="historyPage"
+              :page-size="historyPageSize"
+              :total="history.length"
+              layout="prev, pager, next"
+              size="small"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -175,6 +184,15 @@ const calls = ref([])
 const followUps = ref([])
 const enrollments = ref([])
 const history = ref([])
+
+const historyPage = ref(1)
+const historyPageSize = 10
+
+const paginatedHistory = computed(() => {
+  const start = (historyPage.value - 1) * historyPageSize
+  const end = start + historyPageSize
+  return history.value.slice(start, end)
+})
 
 const showEdit = ref(false)
 const showCallLog = ref(false)
@@ -267,6 +285,7 @@ async function loadHistory() {
   try {
     const res = await leadApi.getHistory(route.params.id)
     history.value = res.data?.data || res.data?.content || res.data || []
+    historyPage.value = 1
   } catch(e) {
     console.error("Lỗi lấy lịch sử:", e)
   }
@@ -345,4 +364,11 @@ watch(() => route.params.id, (newId, oldId) => {
 .history-text { font-size: 13px; color: #101828; }
 .history-by { font-size: 11.5px; color: #98a2b3; margin-top: 2px; }
 @media (max-width: 1024px) { .detail-body { grid-template-columns: 1fr; } }
+.history-pagination {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #e4e7ec;
+  display: flex;
+  justify-content: flex-end;
+}
 </style>
