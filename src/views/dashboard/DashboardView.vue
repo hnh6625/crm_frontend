@@ -59,7 +59,7 @@
         <div v-else class="followup-list">
           <div
             v-for="f in myFollowUps"
-            :key="f.id"
+            :key="f.scheduleId"
             class="followup-item"
             @click="router.push('/leads/' + f.leadId)"
           >
@@ -68,7 +68,7 @@
               <div class="fu-name">{{ f.leadName || 'Hồ sơ chưa có tên' }}</div>
               <div class="fu-note">{{ f.note || 'Không có ghi chú' }}</div>
             </div>
-            <div class="fu-time">{{ formatTime(f.followUpTime) }}</div>
+            <div class="fu-time">{{ formatTime(f.scheduledAt) }}</div>
             <el-button
               size="small"
               type="success"
@@ -150,27 +150,21 @@ async function loadLeads() {
   loadingStats.value = true
   loadingLeads.value = true
   try {
-    // 1. Lấy 5 hồ sơ mới nhất cho Bảng "Hồ sơ gần đây"
     const resRecent = await leadApi.getList({ page: 0, size: 5, sort: 'createdAt,desc' })
     recentLeads.value = resRecent.data?.content || resRecent.data || []
 
-    // 2. Lấy dữ liệu tổng quan cho Thống kê (Giả lập việc lấy data tổng bằng size lớn)
     const resAll = await leadApi.getList({ page: 0, size: 10000 })
     const allLeads = resAll.data?.content || resAll.data || []
 
-    // Cập nhật thẻ Tổng hồ sơ
     stats.value[0].value = resAll.data?.totalElements?.toString() || allLeads.length.toString()
 
-    // Phân tích dữ liệu Trạng thái
     const statusMap = {}
     let enrolledCount = 0
     let inContactCount = 0
 
     allLeads.forEach(l => {
-      // Đã sửa thành statusName cho chuẩn DTO
       const st = l.statusName || 'Khác'
       statusMap[st] = (statusMap[st] || 0) + 1
-
       if (st === 'Đã nhập học' || st === 'Nhập học') enrolledCount++
       if (st === 'Đang liên hệ') inContactCount++
     })
@@ -178,7 +172,6 @@ async function loadLeads() {
     stats.value[1].value = enrolledCount.toString()
     stats.value[2].value = inContactCount.toString()
 
-    // Build dữ liệu cho Biểu đồ thanh ngang
     const total = allLeads.length || 1
     const colorMap = {
       'Mới': '#2e90fa', 'Đang liên hệ': '#f79009', 'Quan tâm': '#a855f7',
@@ -191,7 +184,7 @@ async function loadLeads() {
         pct: Math.round((count / total) * 100),
         color: colorMap[label] || '#98a2b3',
       }))
-      .sort((a, b) => b.count - a.count) // Sắp xếp trạng thái nào nhiều nhất lên đầu
+      .sort((a, b) => b.count - a.count)
 
   } catch (e) {
     console.error("Lỗi lấy dữ liệu Dashboard:", e)
@@ -208,8 +201,9 @@ async function loadFollowUps() {
     const today = dayjs().format('YYYY-MM-DD')
     const allFollowUps = res.data?.data || res.data || []
 
+    // ĐÃ SỬA: Đổi từ f.followUpTime thành f.scheduledAt
     myFollowUps.value = allFollowUps.filter(f =>
-      f.status === 'PENDING' && dayjs(f.followUpTime).format('YYYY-MM-DD') === today
+      f.status === 'PENDING' && dayjs(f.scheduledAt).format('YYYY-MM-DD') === today
     )
     stats.value[3].value = myFollowUps.value.length.toString()
   } catch (e) {
@@ -221,12 +215,13 @@ async function loadFollowUps() {
 
 async function markDone(f) {
   try {
-    await callApi.updateFollowUp(f.id || f.followUpId, 'DONE')
-    myFollowUps.value = myFollowUps.value.filter(x => (x.id || x.followUpId) !== (f.id || f.followUpId))
+    // ĐÃ SỬA: Dùng f.scheduleId thay vì f.id
+    await callApi.updateFollowUp(f.scheduleId, 'DONE')
+    myFollowUps.value = myFollowUps.value.filter(x => x.scheduleId !== f.scheduleId)
     stats.value[3].value = myFollowUps.value.length.toString()
     ElMessage.success("Đã hoàn tất lịch hẹn!")
   } catch (e) {
-    ElMessage.error("Lỗi khi cập nhật trạng thái!",e)
+    ElMessage.error("Lỗi khi cập nhật trạng thái!", e)
   }
 }
 

@@ -15,6 +15,7 @@ export const useLeadStore = defineStore('lead', () => {
     loading.value = true
     try {
       const res = await leadApi.getList(params)
+
       list.value = res.data.content || []
 
       total.value = res.data.page?.totalElements || res.data.totalElements || 0
@@ -32,9 +33,10 @@ export const useLeadStore = defineStore('lead', () => {
       leadApi.getStatuses(),
       leadApi.getTags(),
     ])
-    sources.value  = s.data || []
-    statuses.value = st.data || []
-    tags.value     = (t.data?.data || t.data || []).map(t => t.tagName) // thêm
+    sources.value  = s.data?.data || s.data?.content || s.data || []
+
+    statuses.value = st.data?.data || st.data?.content || st.data || []
+    tags.value     = (t.data?.data || t.data || []).map(t => t.tagName)
   }
 
   async function create(data) {

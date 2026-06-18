@@ -1,10 +1,7 @@
-<!-- src/layouts/AppLayout.vue -->
 <template>
   <div class="app-shell" :class="{ 'sidebar-collapsed': collapsed }">
 
-    <!-- ══════════════════════════ SIDEBAR ══════════════════════════ -->
     <aside class="sidebar">
-      <!-- Logo -->
       <div class="sidebar-logo">
         <div class="logo-icon">
           <span class="icon icon-fill" style="font-size:22px;color:#ff8928">school</span>
@@ -17,7 +14,6 @@
         </transition>
       </div>
 
-      <!-- Nav -->
       <nav class="sidebar-nav">
         <div
           v-for="item in navItems"
@@ -38,21 +34,12 @@
               <transition name="label-fade">
                 <span v-if="!collapsed" class="nav-label">{{ item.label }}</span>
               </transition>
-              <transition name="label-fade">
-                <el-badge
-                  v-if="!collapsed && item.badge"
-                  :value="item.badge"
-                  class="nav-badge"
-                />
-              </transition>
             </div>
           </el-tooltip>
         </div>
       </nav>
 
-      <!-- Bottom: collapse toggle + user -->
       <div class="sidebar-bottom">
-        <!-- User card -->
         <el-dropdown trigger="click" placement="top-start">
           <div class="user-card">
             <el-avatar :size="32" class="user-avatar">
@@ -84,7 +71,6 @@
           </template>
         </el-dropdown>
 
-        <!-- Collapse btn -->
         <button class="collapse-btn" @click="collapsed = !collapsed">
           <span class="icon icon-sm">
             {{ collapsed ? 'chevron_right' : 'chevron_left' }}
@@ -93,24 +79,56 @@
       </div>
     </aside>
 
-    <!-- ══════════════════════════ MAIN ══════════════════════════════ -->
     <div class="main-wrap">
 
-      <!-- Header -->
       <header class="app-header">
         <div class="header-left">
-          <!-- Breadcrumb / page title -->
           <h1 class="page-title">{{ currentTitle }}</h1>
         </div>
         <div class="header-right">
-          <!-- Notifications (placeholder) -->
-          <el-tooltip content="Thông báo" placement="bottom">
-            <button class="header-btn">
-              <span class="icon">notifications</span>
-            </button>
-          </el-tooltip>
 
-          <!-- Quick lead create -->
+          <el-popover placement="bottom-end" :width="340" trigger="click">
+            <template #reference>
+              <button class="header-btn" style="position: relative;" @click="fetchReminders">
+                <el-badge :value="pendingFollowUps.length" :hidden="pendingFollowUps.length === 0" class="bell-badge">
+                  <span class="icon">notifications</span>
+                </el-badge>
+              </button>
+            </template>
+
+            <div class="reminder-popover">
+              <div class="rp-header">
+                <span style="font-weight: 600; color: #101828;">Lịch hẹn cần gọi ({{ pendingFollowUps.length }})</span>
+                <el-button text size="small" @click="fetchReminders" :loading="loadingReminders">
+                  <span class="icon icon-sm">refresh</span>
+                </el-button>
+              </div>
+
+              <div class="rp-body" v-loading="loadingReminders">
+                <div v-if="pendingFollowUps.length === 0" class="rp-empty">
+                  Bạn không có lịch hẹn nào.
+                </div>
+
+                <div v-else class="rp-list">
+                  <div v-for="item in pendingFollowUps" :key="item.scheduleId || item.id" class="rp-item" @click="goToLead(item.leadId)">
+                    <div class="rp-item-left">
+                      <span class="icon icon-fill" style="color: #ff8928;">call</span>
+                    </div>
+                    <div class="rp-item-right">
+                      <div class="rp-lead-name">{{ item.leadName || 'Hồ sơ ứng viên' }}</div>
+                      <div class="rp-lead-phone">{{ item.leadPhone || 'Chưa có SĐT' }}</div>
+                      <div class="rp-time" :class="{'is-overdue': isOverdue(item.scheduledAt)}">
+                        <span class="icon icon-sm" style="font-size: 13px; margin-right:2px">schedule</span>
+                        {{ formatTime(item.scheduledAt) }}
+                        <span v-if="isOverdue(item.scheduledAt)" style="margin-left:4px">(Quá hạn)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+
           <el-button
             type="primary"
             size="small"
@@ -123,7 +141,6 @@
         </div>
       </header>
 
-      <!-- Page content -->
       <main class="page-content">
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
@@ -133,16 +150,17 @@
       </main>
     </div>
 
-    <!-- Change password dialog -->
     <ChangePasswordDialog v-model="showChangePassword" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed }      from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore }        from '@/stores/auth.store'
 import { ROLE_LABELS }         from '@/constants/role'
+import { callApi }             from '@/api/call.api'
+import dayjs                   from 'dayjs'
 import ChangePasswordDialog    from '@/components/ChangePasswordDialog.vue'
 
 const router    = useRouter()
@@ -152,7 +170,10 @@ const authStore = useAuthStore()
 const collapsed         = ref(false)
 const showChangePassword = ref(false)
 
-// ── Nav items ─────────────────────────────────────────────────────────
+// State thông báo
+const pendingFollowUps = ref([])
+const loadingReminders = ref(false)
+
 const navItems = [
   { path: '/dashboard',   icon: 'dashboard',      label: 'Tổng quan'       },
   { path: '/leads',       icon: 'contact_page',   label: 'Hồ sơ tư vấn'   },
@@ -166,7 +187,6 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 
-// ── Computed ─────────────────────────────────────────────────────────
 const currentTitle = computed(() => route.meta?.title || 'EduCRM')
 
 const initials = computed(() => {
@@ -176,14 +196,47 @@ const initials = computed(() => {
 
 const roleLabel = computed(() => ROLE_LABELS[authStore.role] || authStore.role)
 
-// ── Actions ───────────────────────────────────────────────────────────
 async function handleLogout() {
   await authStore.logout()
+}
+
+// Tính năng Nhắc nhở
+async function fetchReminders() {
+  loadingReminders.value = true
+  try {
+    const res = await callApi.getMyFollowUps()
+    pendingFollowUps.value = res.data?.data || res.data || []
+  } catch (e) {
+    console.error("Lỗi lấy thông báo:", e)
+  } finally {
+    loadingReminders.value = false
+  }
+}
+
+onMounted(() => {
+  fetchReminders()
+  // Tự động tải lại lịch hẹn mỗi 5 phút
+  setInterval(fetchReminders, 5 * 60 * 1000)
+})
+
+function goToLead(leadId) {
+  if (!leadId) return
+  router.push(`/leads/${leadId}`)
+}
+
+function isOverdue(date) {
+  if (!date) return false
+  return dayjs(date).isBefore(dayjs())
+}
+
+function formatTime(date) {
+  if (!date) return ''
+  return dayjs(date).format('DD/MM/YYYY HH:mm')
 }
 </script>
 
 <style scoped>
-/* ── Variables ──────────────────────────────────────────────────────── */
+/* Variables */
 .app-shell {
   --sb-width:      240px;
   --sb-collapsed:  64px;
@@ -196,7 +249,7 @@ async function handleLogout() {
   background: #f0f2f5;
 }
 
-/* ── Sidebar ────────────────────────────────────────────────────────── */
+/* Sidebar*/
 .sidebar {
   width: var(--sb-width);
   min-width: var(--sb-width);
@@ -390,7 +443,6 @@ async function handleLogout() {
   color: rgba(255,255,255,0.7);
 }
 
-/* ── Main wrap ──────────────────────────────────────────────────────── */
 .main-wrap {
   flex: 1;
   display: flex;
@@ -451,7 +503,62 @@ async function handleLogout() {
   padding: 24px;
 }
 
-/* ── Transitions ────────────────────────────────────────────────────── */
+/* ── POPOVER THÔNG BÁO LỊCH HẸN ─────────────────────────────────────── */
+.bell-badge :deep(.el-badge__content) {
+  top: 4px;
+  right: 6px;
+  background-color: #d92d20;
+}
+
+.reminder-popover {
+  display: flex;
+  flex-direction: column;
+  margin: -12px;
+}
+.rp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e4e7ec;
+  background: #f9fafb;
+}
+.rp-body {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.rp-empty {
+  padding: 32px 24px;
+  text-align: center;
+  color: #667085;
+  font-size: 13.5px;
+}
+.rp-list {
+  display: flex;
+  flex-direction: column;
+}
+.rp-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f0f2f5;
+}
+.rp-item:last-child { border-bottom: none; }
+.rp-item:hover { background: #f2f4f7; }
+.rp-item-left { padding-top: 2px; }
+.rp-item-right { display: flex; flex-direction: column; gap: 3px; width: 100%;}
+.rp-lead-name { font-size: 13.5px; font-weight: 600; color: #101828; }
+.rp-lead-phone { font-size: 12.5px; color: #475467; }
+.rp-time {
+  display: flex; align-items: center;
+  font-size: 11.5px; color: #667085; margin-top: 2px;
+}
+.rp-time.is-overdue { color: #d92d20; font-weight: 600; }
+
+
 .label-fade-enter-active,
 .label-fade-leave-active { transition: opacity 0.15s ease; }
 .label-fade-enter-from,

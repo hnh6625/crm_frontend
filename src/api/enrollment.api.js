@@ -14,6 +14,8 @@ export const enrollmentApi = {
   // Cập nhật hồ sơ
   update: (id, data) => api.put(`/api/enrollments/${id}`, data),
 
+  getById: (id) => api.get(`/api/enrollments/${id}`),
+
   // Cập nhật trạng thái
   updateStatus: (id, status) => api.patch(`/api/enrollments/${id}/status?status=${status}`),
 
