@@ -24,14 +24,14 @@
           <span class="icon icon-sm">edit</span>
         </el-button>
         <el-button type="primary" plain @click="showCallLog = true">
-          <span class="icon icon-sm">phone</span> Ghi gọi
+          <span></span> Ghi gọi
         </el-button>
         <el-button
           v-if="lead.statusName !== 'Đã nhập học'"
           type="success"
           @click="showEnrollment = true"
         >
-          <span class="icon icon-sm">school</span> Chốt nhập học
+          <span></span> Nhập học
         </el-button>
       </div>
     </div>
@@ -153,7 +153,7 @@
 
 <script setup>
 import { ElMessage } from 'element-plus';
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { leadApi } from '@/api/lead.api'
 import { callApi } from '@/api/call.api'
@@ -186,11 +186,17 @@ const initials = computed(() => {
   return n.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase() || 'N'
 })
 
+const genderMap = {
+  MALE: 'Nam',
+  FEMALE: 'Nữ'
+}
+
 const infoFields = computed(() => [
   {label: 'Họ và tên', value: lead.value?.fullName},
   {label: 'SĐT', value: lead.value?.phone},
   {label: 'Email', value: lead.value?.email},
   {label: 'Năm sinh', value: lead.value?.birthDate },
+  {label: 'Giới tính', value: genderMap[lead.value?.gender] },
   {label: 'Trường học', value: lead.value?.schoolName },
   {label: 'Năm tốt nghiệp', value: lead.value?.graduationYear },
   {label: 'Địa chỉ', value: lead.value?.address },
@@ -275,7 +281,27 @@ async function onEnrollmentSaved() {
 onMounted(() => { reload() })
 function openEdit() { showEdit.value = true }
 function fmtDateTime(v) { return v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '—' }
+
+async function updateFollowUpStatus(scheduleId, status) {
+  try {
+    await callApi.updateFollowUp(scheduleId, status)
+    ElMessage.success("Đã cập nhật trạng thái lịch hẹn!")
+    await loadFollowUps()
+  } catch (e) {
+    console.error(e)
+    ElMessage.error("Lỗi khi cập nhật lịch hẹn")
+  }
+}
+
+watch(() => route.params.id, (newId, oldId) => {
+  // Nếu URL thay đổi ID thì tự động tải lại dữ liệu mới
+  if (newId && newId !== 'undefined' && newId !== oldId) {
+    reload()
+  }
+})
+
 </script>
+
 
 <style scoped>
 /* Bạn giữ nguyên phần <style> cũ của LeadDetailView nhé */

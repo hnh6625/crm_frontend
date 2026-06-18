@@ -22,6 +22,7 @@ const routes = [
       { path: 'leads', component: () => import('@/views/leads/LeadListView.vue'), meta: { title: 'Quản lý Hồ sơ' } },
       { path: 'leads/:id', component: () => import('@/views/leads/LeadDetailView.vue'), meta: { title: 'Chi tiết Hồ sơ' } },
       { path: 'enrollments', component: () => import('@/views/enrollments/EnrollmentView.vue'), meta: { title: 'Nhập học' } },
+      { path: 'enrollments/:id', component: () => import('@/views/enrollments/EnrollmentDetailView.vue'), meta: { title: 'Chi tiết Nhập học' } },
       { path: 'imports', component: () => import('@/views/imports/ImportView.vue'), meta: { title: 'Import Leads' } },
 
       { path: 'users', component: () => import('@/views/users/UserListView.vue'), meta: { title: 'Người dùng', roles: [ROLES.MANAGER] } },

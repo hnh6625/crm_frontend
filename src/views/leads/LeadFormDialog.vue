@@ -56,6 +56,12 @@
             style="width:100%"
           />
         </el-form-item>
+        <el-form-item label="Giới tính" prop="gender">
+          <el-select v-model="form.gender" placeholder="Chọn giới tính" style="width:100%">
+            <el-option label="Nam" value="MALE" />
+            <el-option label="Nữ" value="FEMALE" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="Nguồn" prop="sourceId">
           <el-select v-model="form.sourceId" placeholder="Chọn nguồn" style="width:100%" filterable>
             <el-option
@@ -66,16 +72,18 @@
             />
           </el-select>
         </el-form-item>
+
         <el-form-item label="Trạng thái" prop="statusId">
           <el-select v-model="form.statusId" placeholder="Chọn trạng thái" style="width:100%">
             <el-option
-              v-for="s in leadStore.statuses"
+              v-for="s in availableStatuses"
               :key="s.statusId"
               :label="s.statusName"
               :value="s.statusId"
             />
           </el-select>
         </el-form-item>
+
         <el-form-item label="Tư vấn viên">
           <el-select
             v-model="form.assignedTo"
@@ -157,6 +165,18 @@ const provinces = [
   "Quảng Ninh", "Quảng Trị", "Quảng Ngãi", "Sơn La", "Tây Ninh", "Thái Nguyên", "Thanh Hóa",
   "TP Hồ Chí Minh", "Tuyên Quang", "Vĩnh Long"
 ]
+// lọc trạng thái
+const availableStatuses = computed(() => {
+  if (!leadStore.statuses) return []
+
+  return leadStore.statuses.filter(s => {
+    if (isEdit.value && props.lead?.statusId === s.statusId) {
+      return true
+    }
+
+    return s.statusName !== 'Đã đăng ký'
+  })
+})
 
 const form = reactive({
   fullName: '',
@@ -164,8 +184,7 @@ const form = reactive({
   email: '',
   birthDate: null,
   schoolName: '',
-  graduationYear: null, // thêm
-
+  graduationYear: null,
   address: '',
   province: '',
   sourceId: null,
@@ -192,13 +211,15 @@ const rules = {
 onMounted(async () => {
   try {
     const res = await userApi.getConsultants()
-
-    console.log("FULL RESPONSE =", res)
-    console.log("DATA =", res.data)
-
     consultants.value = res.data?.data || res.data || []
+
+    if (!leadStore.statuses || leadStore.statuses.length === 0) {
+      if(typeof leadStore.fetchOptions === 'function') {
+        await leadStore.fetchOptions()
+      }
+    }
   } catch (e) {
-    console.error('Lỗi khi tải danh sách tư vấn viên:', e)
+    console.error('Lỗi khi tải danh sách tư vấn viên hoặc trạng thái:', e)
   }
 })
 
@@ -209,15 +230,15 @@ watch(() => props.lead, lead => {
       phone: lead.phone || '',
       email: lead.email || '',
       birthDate: lead.birthDate || null,
-      schoolName: props.lead.schoolName,
-      graduationYear: props.lead.graduationYear,
-      address: props.lead.address, // thêm
-      province: props.lead.province,
+      schoolName: lead.schoolName || '',
+      graduationYear: lead.graduationYear || null,
+      address: lead.address || '',
+      province: lead.province || '',
       sourceId: lead.sourceId || null,
       statusId: lead.statusId || null,
       assignedTo: lead.assignedToId || lead.consultantId || null,
       tags: lead.tags || lead.tagsId || lead.tagsIds || [],
-      notes: lead.note || '', // sửa notes thành note
+      notes: lead.note || '',
     })
   } else {
     resetForm()
@@ -226,7 +247,7 @@ watch(() => props.lead, lead => {
 
 function resetForm() {
   if (formRef.value) formRef.value.resetFields()
-  Object.assign(form, { fullName: '', phone: '', email: '', birthYear: null, sourceId: null, assignedTo: null, statusId: null, tags: [], notes: '' })
+  Object.assign(form, { fullName: '', phone: '', email: '', birthDate: null, schoolName: '', graduationYear: null, address: '', province: '', sourceId: null, assignedTo: null, statusId: null, tags: [], notes: '' })
 }
 
 async function submit() {
@@ -236,7 +257,7 @@ async function submit() {
   loading.value = true
   try {
     const targetId = props.lead?.leadId || props.lead?.id
-    const rawTags = (form.tags || []).map(t => typeof t === 'object' ? t.tagName : t) // sửa lạinpm
+    const rawTags = (form.tags || []).map(t => typeof t === 'object' ? t.tagName : t)
 
     const payload = {
       fullName: form.fullName,
@@ -245,10 +266,8 @@ async function submit() {
       birthDate: form.birthDate,
       schoolName: form.schoolName,
       graduationYear: form.graduationYear,
-
       address: form.address,
       province: form.province,
-
       sourceId: form.sourceId,
       statusId: form.statusId,
       assignedTo: form.assignedTo,
