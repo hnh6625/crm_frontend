@@ -31,7 +31,7 @@
         </el-select>
 
         <el-select
-          v-if="authStore.isAdmin"
+          v-if="authStore.isManager"
           v-model="filters.consultantId"
           placeholder="Tư vấn viên"
           clearable
@@ -51,7 +51,7 @@
         <el-button @click="fetchLeads">
           <span class="icon icon-sm">refresh</span>
         </el-button>
-        <el-button v-if="authStore.isAdmin" @click="openAssignDialog" :disabled="selectedRows.length === 0">
+        <el-button v-if="authStore.isManager" @click="openAssignDialog" :disabled="selectedRows.length === 0">
           <span class="icon icon-sm">assignment_ind</span> Phân công
         </el-button>
         <el-button type="primary" @click="openForm(null)">
@@ -117,7 +117,7 @@
                     <span class="icon icon-sm" style="margin-right:6px">edit</span>Chỉnh sửa
                   </el-dropdown-item>
                   <el-dropdown-item
-                    v-if="authStore.isAdmin"
+                    v-if="authStore.isManager"
                     divided
                     @click.stop="confirmDelete(row)"
                   >
@@ -200,7 +200,7 @@ let debounceTimer = null
 onMounted(async () => {
   await leadStore.fetchDropdowns()
 
-  if (authStore.isAdmin) {
+  if (authStore.isManager) {
     try {
       const res = await userApi.getConsultants()
       consultants.value = res.data?.data || res.data || [] // thêm

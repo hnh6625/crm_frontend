@@ -3,9 +3,8 @@
 
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon">
-          <span class="icon icon-fill" style="font-size:22px;color:#ff8928">school</span>
-        </div>
+        <img src="@/assets/crm.png" alt="CRM Logo" class="custom-logo" />
+
         <transition name="label-fade">
           <div v-if="!collapsed" class="logo-text">
             <span class="logo-name">EduCRM</span>
@@ -19,7 +18,7 @@
           v-for="item in navItems"
           :key="item.path"
           class="nav-item"
-          :class="{ active: isActive(item.path), hidden: item.adminOnly && !authStore.isAdmin }"
+          :class="{ active: isActive(item.path), hidden: item.adminOnly && !authStore.isManager }"
           @click="router.push(item.path)"
         >
           <el-tooltip
@@ -279,17 +278,12 @@ function formatTime(date) {
   overflow: hidden;
 }
 
-.logo-icon {
+.custom-logo {
   width: 36px;
   height: 36px;
-  min-width: 36px;
-  background: rgba(255,137,40,0.15);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255,137,40,0.3);
+  object-fit: contain;
 }
+
 
 .logo-text {
   display: flex;

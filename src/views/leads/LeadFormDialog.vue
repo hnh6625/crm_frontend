@@ -74,7 +74,12 @@
         </el-form-item>
 
         <el-form-item label="Trạng thái" prop="statusId">
-          <el-select v-model="form.statusId" placeholder="Chọn trạng thái" style="width:100%">
+          <el-select
+            v-model="form.statusId"
+            placeholder="Chọn trạng thái"
+            style="width:100%"
+            :disabled="!isEdit"
+          >
             <el-option
               v-for="s in availableStatuses"
               :key="s.statusId"
@@ -90,6 +95,7 @@
             placeholder="Chọn tư vấn viên"
             style="width:100%"
             clearable
+            :disabled="!authStore.isManager"
           >
             <el-option
               v-for="u in consultants"
@@ -139,6 +145,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useLeadStore } from '@/stores/lead.store'
 import { userApi } from '@/api/user.api'
+import { useAuthStore } from '@/stores/auth.store'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -153,10 +160,12 @@ const visible = computed({
 
 const isEdit = computed(() => !!props.lead?.leadId || !!props.lead?.id)
 const leadStore = useLeadStore()
+const authStore = useAuthStore()
 
 const formRef = ref()
 const loading = ref(false)
 const consultants = ref([])
+
 
 const provinces = [
   "An Giang", "Bắc Ninh", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắk Lắk", "Điện Biên",
@@ -223,7 +232,7 @@ onMounted(async () => {
   }
 })
 
-watch(() => props.lead, lead => {
+watch(() => props.lead, async lead => {
   if (lead) {
     Object.assign(form, {
       fullName: lead.fullName || '',
@@ -243,6 +252,23 @@ watch(() => props.lead, lead => {
     })
   } else {
     resetForm()
+
+    // Đảm bảo dữ liệu statuses đã được tải về
+    if (!leadStore.statuses || leadStore.statuses.length === 0) {
+      if(typeof leadStore.fetchOptions === 'function') {
+        await leadStore.fetchOptions()
+      }
+    }
+
+    // Tìm trạng thái có tên là "Mới"
+    const newStatus = leadStore.statuses?.find(
+      s => s.statusName?.toLowerCase() === 'mới'
+    )
+
+    // Nếu tìm thấy, tự động gán ID vào form
+    if (newStatus) {
+      form.statusId = newStatus.statusId
+    }
   }
 }, { immediate: true })
 

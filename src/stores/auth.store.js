@@ -4,6 +4,7 @@ import { authApi }  from '@/api/auth.api'
 import { ROLES }    from '@/constants/role'
 import router from '@/router'
 
+
 export const useAuthStore = defineStore('auth', () => {
   const getSafeUser = () => {
     try {
@@ -18,7 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn  = computed(() => !!token.value)
 
-  const isAdmin = computed(() => {
+  const isManager = computed(() => {
     const userRole = String(user.value?.role || '').toUpperCase().replace('ROLE_', '');
     const managerRole = String(ROLES.MANAGER || 'MANAGER').toUpperCase().replace('ROLE_', '');
     return userRole === managerRole;
@@ -55,7 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    user, token, isLoggedIn, isAdmin,
+    user, token, isLoggedIn, isManager,
     mustChange, fullName, role,
     login, logout,
   }

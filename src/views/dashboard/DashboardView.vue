@@ -150,41 +150,54 @@ async function loadLeads() {
   loadingStats.value = true
   loadingLeads.value = true
   try {
+    // Lấy 5 hồ sơ mới nhất cho bảng "Hồ sơ gần đây" (API có sẵn, phân trang size=5 siêu nhẹ)
     const resRecent = await leadApi.getList({ page: 0, size: 5, sort: 'createdAt,desc' })
     recentLeads.value = resRecent.data?.content || resRecent.data || []
 
-    const resAll = await leadApi.getList({ page: 0, size: 10000 })
-    const allLeads = resAll.data?.content || resAll.data || []
+    // Lấy Tổng số hồ sơ
+    const resCount = await leadApi.getCount()
+    const totalLeads = resCount.data || 0
+    stats.value[0].value = totalLeads.toString()
 
-    stats.value[0].value = resAll.data?.totalElements?.toString() || allLeads.length.toString()
+    // GỌI API THỐNG KÊ MỚI (Chỉ tải về 1 mảng vài dòng chứa tên trạng thái và con số)
+    const resStats = await leadApi.getStatusStats()
+    const statsData = resStats.data?.data || resStats.data || []
 
-    const statusMap = {}
     let enrolledCount = 0
     let inContactCount = 0
 
-    allLeads.forEach(l => {
-      const st = l.statusName || 'Khác'
-      statusMap[st] = (statusMap[st] || 0) + 1
-      if (st === 'Đã nhập học' || st === 'Nhập học') enrolledCount++
-      if (st === 'Đang liên hệ') inContactCount++
-    })
-
-    stats.value[1].value = enrolledCount.toString()
-    stats.value[2].value = inContactCount.toString()
-
-    const total = allLeads.length || 1
     const colorMap = {
       'Mới': '#2e90fa', 'Đang liên hệ': '#f79009', 'Quan tâm': '#a855f7',
       'Đã tư vấn': '#001e40', 'Đã nhập học': '#12b76a', 'Từ chối': '#f04438',
     }
 
-    leadStatusData.value = Object.entries(statusMap)
-      .map(([label, count]) => ({
-        label, count,
-        pct: Math.round((count / total) * 100),
-        color: colorMap[label] || '#98a2b3',
-      }))
-      .sort((a, b) => b.count - a.count)
+    const chartData = []
+
+    // Xử lý dữ liệu trả về từ Database
+    statsData.forEach(item => {
+      // Cập nhật 2 thẻ thống kê nhỏ
+      if (item.statusName === 'Đã nhập học' || item.statusName === 'Nhập học') {
+        enrolledCount = item.count
+      }
+      if (item.statusName === 'Đang liên hệ') {
+        inContactCount = item.count
+      }
+
+      // Chuẩn bị dữ liệu cho biểu đồ thanh ngang
+      chartData.push({
+        label: item.statusName,
+        count: item.count,
+        pct: totalLeads === 0 ? 0 : Math.round((item.count / totalLeads) * 100),
+        color: colorMap[item.statusName] || '#98a2b3'
+      })
+    })
+
+    // Gán dữ liệu lên màn hình
+    stats.value[1].value = enrolledCount.toString()
+    stats.value[2].value = inContactCount.toString()
+
+    // Sắp xếp trạng thái nào đông nhất lên đầu
+    leadStatusData.value = chartData.sort((a, b) => b.count - a.count)
 
   } catch (e) {
     console.error("Lỗi lấy dữ liệu Dashboard:", e)
