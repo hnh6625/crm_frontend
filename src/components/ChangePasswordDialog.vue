@@ -1,4 +1,3 @@
-<!-- src/components/ChangePasswordDialog.vue -->
 <template>
   <el-dialog
     v-model="visible"

@@ -1,4 +1,3 @@
-<!-- src/views/users/UserFormDialog.vue -->
 <template>
   <el-dialog
     v-model="visible"
@@ -30,10 +29,6 @@
           <el-select v-model="form.role" placeholder="Chọn vai trò" style="width:100%">
             <el-option v-for="(label, key) in ROLE_LABELS" :key="key" :label="label" :value="key"/>
           </el-select>
-        </el-form-item>
-        <el-form-item v-if="!isEdit" label="Mật khẩu tạm thời" prop="password">
-          <el-input v-model="form.password" type="password" show-password
-                    placeholder="Tối thiểu 6 ký tự"/>
         </el-form-item>
       </div>
 
@@ -76,11 +71,13 @@ const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
 
+// ĐÃ XOÁ: Biến password
 const form = reactive({
   fullName: '', username: '', email: '', phone: '',
-  role: '', password: '', status: 'ACTIVE',
+  role: '', status: 'ACTIVE',
 })
 
+// ĐÃ XOÁ: Rule validation cho password
 const rules = {
   fullName: [{required: true, message: 'Vui lòng nhập họ tên', trigger: 'blur'}],
   username: [{required: true, message: 'Vui lòng nhập tên đăng nhập', trigger: 'blur'}],
@@ -89,10 +86,6 @@ const rules = {
     {type: 'email', message: 'Email không hợp lệ', trigger: 'blur'},
   ],
   role: [{required: true, message: 'Vui lòng chọn vai trò', trigger: 'change'}],
-  password: [
-    {required: true, message: 'Vui lòng nhập mật khẩu', trigger: 'blur'},
-    {min: 6, message: 'Tối thiểu 6 ký tự', trigger: 'blur'},
-  ],
 }
 
 watch(() => props.user, u => {
@@ -101,7 +94,6 @@ watch(() => props.user, u => {
       fullName: u.fullName || '', username: u.username || '',
       email: u.email || '', phone: u.phone || '',
       role: u.role || '', status: u.status || 'ACTIVE',
-      password: '',
     })
   } else {
     Object.assign(form, {
@@ -110,7 +102,6 @@ watch(() => props.user, u => {
       email: '',
       phone: '',
       role: '',
-      password: '',
       status: 'ACTIVE'
     })
   }
@@ -135,6 +126,7 @@ async function submit() {
         email: form.email,
         phone: form.phone,
         roleId: ROLE_IDS[form.role],
+        password: form.username
       })
     }
     emit('saved')
