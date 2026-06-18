@@ -78,7 +78,7 @@
             v-model="form.statusId"
             placeholder="Chọn trạng thái"
             style="width:100%"
-            :disabled="!isEdit"
+            :disabled="!isEdit || authStore.isCollaborator"
           >
             <el-option
               v-for="s in availableStatuses"
@@ -219,9 +219,10 @@ const rules = {
 
 onMounted(async () => {
   try {
-    const res = await userApi.getConsultants()
-    consultants.value = res.data?.data || res.data || []
-
+    if (authStore.isManager) {
+      const res = await userApi.getConsultants()
+      consultants.value = res.data?.data || res.data || []
+    }
     if (!leadStore.statuses || leadStore.statuses.length === 0) {
       if(typeof leadStore.fetchOptions === 'function') {
         await leadStore.fetchOptions()
@@ -253,19 +254,19 @@ watch(() => props.lead, async lead => {
   } else {
     resetForm()
 
-    // Đảm bảo dữ liệu statuses đã được tải về
+
     if (!leadStore.statuses || leadStore.statuses.length === 0) {
-      if(typeof leadStore.fetchOptions === 'function') {
-        await leadStore.fetchOptions()
+      if(typeof leadStore.fetchDropdowns === 'function') {
+        await leadStore.fetchDropdowns()
       }
     }
 
-    // Tìm trạng thái có tên là "Mới"
+    //  Thêm .trim() để lọc khoảng trắng thừa
     const newStatus = leadStore.statuses?.find(
-      s => s.statusName?.toLowerCase() === 'mới'
+      s => s.statusName?.trim().toLowerCase() === 'mới'
     )
 
-    // Nếu tìm thấy, tự động gán ID vào form
+    // Tự động gán ID vào form
     if (newStatus) {
       form.statusId = newStatus.statusId
     }

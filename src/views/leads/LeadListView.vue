@@ -99,6 +99,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="assignedToName" label="Tư vấn viên" width="160"/>
+        <el-table-column prop="createdByName" label="Người tạo" width="160">
+          <template #default="{ row }">
+            <el-tag size="small" type="info" effect="plain">
+              {{ row.createdByName || 'Hệ thống' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="Ngày tạo" width="120">
           <template #default="{ row }">{{ fmtDate(row.createdAt) }}</template>
         </el-table-column>
@@ -117,7 +124,7 @@
                     <span class="icon icon-sm" style="margin-right:6px">edit</span>Chỉnh sửa
                   </el-dropdown-item>
                   <el-dropdown-item
-                    v-if="authStore.isManager"
+                    v-if="!authStore.isCollaborator"
                     divided
                     @click.stop="confirmDelete(row)"
                   >

@@ -25,6 +25,12 @@ export const useAuthStore = defineStore('auth', () => {
     return userRole === managerRole;
   })
 
+  const isCollaborator = computed(() => {
+    const userRole = String(user.value?.role || '').toUpperCase().replace('ROLE_', '');
+    const collabRole = String(ROLES.COLLABORATOR || 'COLLABORATOR').toUpperCase().replace('ROLE_', '');
+    return userRole === collabRole;
+  })
+
   const mustChange  = computed(() => user.value?.mustChangePassword === true)
   const fullName    = computed(() => user.value?.fullName || '')
   const role        = computed(() => user.value?.role || '')
@@ -56,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    user, token, isLoggedIn, isManager,
+    user, token, isLoggedIn, isManager,isCollaborator,
     mustChange, fullName, role,
     login, logout,
   }

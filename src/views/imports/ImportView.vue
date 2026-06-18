@@ -172,15 +172,17 @@
         </el-table-column>
       </el-table>
 
+
       <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
         <el-pagination
-          v-model:current-page="errorCurrentPage"
-          v-model:page-size="errorPageSize"
-          :page-sizes="[50, 100, 200]"
+          v-model:current-page="historyPage"
+          v-model:page-size="historyPageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="historyTotal"
           layout="total, sizes, prev, pager, next"
-          :total="historyErrors.length"
           small
           background
+          @change="loadHistory"
         />
       </div>
     </el-dialog>
@@ -216,6 +218,10 @@ const paginatedHistoryErrors = computed(() => {
   const end = start + errorPageSize.value;
   return historyErrors.value.slice(start, end);
 });
+
+const historyPage = ref(1)
+const historyPageSize = ref(10)
+const historyTotal = ref(0)
 
 onMounted(() => {
   loadHistory()
@@ -312,8 +318,13 @@ async function openHistoryErrors(row) {
 async function loadHistory() {
   loadingHistory.value = true
   try {
-    const res = await importApi.getHistory({ page: 0, size: 20, sort: 'createdAt,desc' })
+    const res = await importApi.getHistory({
+      page: historyPage.value - 1,
+      size: historyPageSize.value,
+      sort: 'createdAt,desc'
+    })
     history.value = res.data?.content || res.data || []
+    historyTotal.value = res.data?.totalElements || 0
   } catch (e) {
     console.error("Lỗi lấy lịch sử:", e)
   } finally {

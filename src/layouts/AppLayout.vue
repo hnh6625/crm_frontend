@@ -18,7 +18,7 @@
           v-for="item in navItems"
           :key="item.path"
           class="nav-item"
-          :class="{ active: isActive(item.path), hidden: item.adminOnly && !authStore.isManager }"
+          :class="{ active: isActive(item.path), hidden: item.adminOnly && !authStore.isManager|| (item.hideFromCollab && authStore.isCollaborator) }"
           @click="router.push(item.path)"
         >
           <el-tooltip
@@ -176,7 +176,7 @@ const loadingReminders = ref(false)
 const navItems = [
   { path: '/dashboard',   icon: 'dashboard',      label: 'Tổng quan'       },
   { path: '/leads',       icon: 'contact_page',   label: 'Hồ sơ tư vấn'   },
-  { path: '/enrollments', icon: 'school',         label: 'Nhập học'        },
+  { path: '/enrollments', icon: 'school',         label: 'Nhập học', hideFromCollab: true },
   { path: '/imports',     icon: 'upload_file',    label: 'Import Leads'    },
   { path: '/users',       icon: 'manage_accounts',label: 'Người dùng', adminOnly: true },
 ]

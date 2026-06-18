@@ -150,8 +150,8 @@ async function loadLeads() {
   loadingStats.value = true
   loadingLeads.value = true
   try {
-    // Lấy 5 hồ sơ mới nhất cho bảng "Hồ sơ gần đây" (API có sẵn, phân trang size=5 siêu nhẹ)
-    const resRecent = await leadApi.getList({ page: 0, size: 5, sort: 'createdAt,desc' })
+    // Lấy 10 hồ sơ mới nhất cho bảng "Hồ sơ gần đây"
+    const resRecent = await leadApi.getList({ page: 0, size: 10, sort: 'createdAt,desc' })
     recentLeads.value = resRecent.data?.content || resRecent.data || []
 
     // Lấy Tổng số hồ sơ
@@ -214,7 +214,6 @@ async function loadFollowUps() {
     const today = dayjs().format('YYYY-MM-DD')
     const allFollowUps = res.data?.data || res.data || []
 
-    // ĐÃ SỬA: Đổi từ f.followUpTime thành f.scheduledAt
     myFollowUps.value = allFollowUps.filter(f =>
       f.status === 'PENDING' && dayjs(f.scheduledAt).format('YYYY-MM-DD') === today
     )
@@ -243,8 +242,11 @@ function formatTime(v) { return v ? dayjs(v).format('HH:mm') : '—' }
 </script>
 
 <style scoped>
-/* Giữ nguyên toàn bộ CSS cũ của bạn, không cần thay đổi gì ở đây */
-.dashboard { display: flex; flex-direction: column; gap: 20px; }
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
 /* Stat cards */
 .stats-grid {
@@ -310,6 +312,7 @@ function formatTime(v) { return v ? dayjs(v).format('HH:mm') : '—' }
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(16,24,40,0.08);
+
 }
 
 .card-title-row {

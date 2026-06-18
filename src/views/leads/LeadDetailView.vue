@@ -20,14 +20,22 @@
         <el-tag :type="LEAD_STATUS_COLORS[lead.statusName] || 'info'" size="large">
           {{ lead.statusName || '-' }}
         </el-tag>
+
         <el-button @click="openEdit">
           <span class="icon icon-sm">edit</span>
         </el-button>
-        <el-button type="primary" plain @click="showCallLog = true">
+
+        <el-button
+          v-if="!authStore.isCollaborator"
+          type="primary"
+          plain
+          @click="showCallLog = true"
+        >
           <span></span> Ghi gọi
         </el-button>
+
         <el-button
-          v-if="lead.statusName !== 'Đã nhập học'"
+          v-if="lead.statusName !== 'Đã nhập học' && !authStore.isCollaborator"
           type="success"
           @click="showEnrollment = true"
         >
@@ -73,7 +81,13 @@
         <div class="card fu-card">
           <div class="section-title-row">
             <span class="section-title">Lịch hẹn follow-up</span>
-            <el-button size="small" type="primary" text @click="showFollowUp = true">
+            <el-button
+              v-if="!authStore.isCollaborator"
+              size="small"
+              type="primary"
+              text
+              @click="showFollowUp = true"
+            >
               <span class="icon icon-sm">add</span> Đặt lịch
             </el-button>
           </div>
@@ -86,7 +100,7 @@
                 <div class="fu-note">{{ f.note || 'Không có ghi chú' }}</div>
               </div>
 
-              <div v-if="f.status === 'PENDING'" style="display:flex;gap:4px">
+              <div v-if="f.status === 'PENDING' && !authStore.isCollaborator" style="display:flex;gap:4px">
                 <el-button size="small" type="success" text @click="updateFollowUpStatus(f.scheduleId || f.id, 'DONE')">
                   <span class="icon icon-sm">check_circle</span>
                 </el-button>
@@ -174,6 +188,7 @@ import CallLogDialog from '@/views/calls/CallLogDialog.vue';
 import FollowUpDialog from '@/views/calls/FollowUpDialog.vue';
 import EnrollmentFormInline from '../enrollments/EnrollmentFormInline.vue'
 import dayjs from 'dayjs'
+import { useAuthStore } from '@/stores/auth.store'
 
 const route = useRoute()
 const router = useRouter()
@@ -187,6 +202,8 @@ const history = ref([])
 
 const historyPage = ref(1)
 const historyPageSize = 10
+
+const authStore = useAuthStore()
 
 const paginatedHistory = computed(() => {
   const start = (historyPage.value - 1) * historyPageSize
@@ -223,6 +240,7 @@ const infoFields = computed(() => [
   {label: 'Trạng thái', value: lead.value?.statusName || '-' },
   {label: 'Tags', value: (lead.value?.tags || []).join(', ')},
   {label: 'Tư vấn viên', value: lead.value?.assignedToName},
+  {label: 'Người tạo', value: lead.value?.createdByName || 'Hệ thống'},
   {label: 'Ghi chú', value: lead.value?.note },
 ])
 
