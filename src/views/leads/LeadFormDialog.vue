@@ -229,6 +229,7 @@ watch(() => props.lead, lead => {
       fullName: lead.fullName || '',
       phone: lead.phone || '',
       email: lead.email || '',
+      gender: lead.gender || null,
       birthDate: lead.birthDate || null,
       schoolName: lead.schoolName || '',
       graduationYear: lead.graduationYear || null,
@@ -247,7 +248,7 @@ watch(() => props.lead, lead => {
 
 function resetForm() {
   if (formRef.value) formRef.value.resetFields()
-  Object.assign(form, { fullName: '', phone: '', email: '', birthDate: null, schoolName: '', graduationYear: null, address: '', province: '', sourceId: null, assignedTo: null, statusId: null, tags: [], notes: '' })
+  Object.assign(form, { fullName: '', phone: '', email: '', gender: null,birthDate: null, schoolName: '', graduationYear: null, address: '', province: '', sourceId: null, assignedTo: null, statusId: null, tags: [], notes: '' })
 }
 
 async function submit() {
@@ -263,6 +264,7 @@ async function submit() {
       fullName: form.fullName,
       phone: form.phone,
       email: form.email,
+      gender: form.gender,
       birthDate: form.birthDate,
       schoolName: form.schoolName,
       graduationYear: form.graduationYear,
