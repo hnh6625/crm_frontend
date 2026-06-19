@@ -5,6 +5,7 @@ export const importApi = {
     const fd = new FormData()
     fd.append('file', file)
     return api.post('/api/imports/upload', fd, {
+      timeout: 300000,
       headers: { 'Content-Type': 'multipart/form-data' }
     })
   },

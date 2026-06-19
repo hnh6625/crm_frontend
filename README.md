@@ -1,44 +1,34 @@
-# crm-frontend
+# CRM Admissions Management - Frontend Dashboard
 
-This template should help get you started developing with Vue 3 in Vite.
+Giao diện quản trị hệ thống CRM Tuyển sinh được xây dựng bằng **Vue 3 (Composition API)**. Dự án tập trung vào việc tối ưu hóa trải nghiệm người dùng (UX/UI), xử lý mượt mà khối lượng dữ liệu lớn và tương tác API theo thời gian thực.
 
-## Recommended IDE Setup
+## Điểm nhấn kỹ thuật
+- **State Management (Pinia):** Quản lý trạng thái ứng dụng phi tập trung, phân quyền hiển thị component linh hoạt dựa trên Role (Manager, Collaborator).
+- **Tối ưu hóa hiển thị (Client-side Pagination):** Xử lý DOM mượt mà khi render hàng chục ngàn dòng dữ liệu lỗi trả về từ hệ thống Import mà không gây treo trình duyệt.
+- **Axios Interceptors:** Xử lý tự động đính kèm Token, cơ chế **Auto Refresh Token** khi hết phiên đăng nhập, và tùy biến Timeout linh hoạt cho các API tải file dung lượng lớn.
+- **UI Components:** Sử dụng Element Plus kết hợp với TailwindCSS để xây dựng giao diện Dashboard chuyên nghiệp, thân thiện.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Công nghệ sử dụng
+- **Core:** Vue 3 (Composition API), Vite
+- **Router & State:** Vue Router, Pinia
+- **HTTP Client:** Axios
+- **UI Framework:** Element Plus, TailwindCSS
 
-## Recommended Browser Setup
+## Hướng dẫn cài đặt
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+### 1. Yêu cầu hệ thống
+- Node.js version 18.x trở lên.
+- Npm hoặc Yarn.
 
-## Customize configuration
+### 2. Cài đặt và khởi chạy 
+- **Cài đặt các thư viện (dependencies)**
+    
+    npm install
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- **Chạy server ở chế độ phát triển (development)**
 
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+    npm run dev
+### 3. Cấu hình môi trường
+Tạo một file `.env.development` ở thư mục gốc (nếu chưa có) và trỏ API về Backend đang chạy:
+```env
+VITE_API_URL=http://localhost:8080

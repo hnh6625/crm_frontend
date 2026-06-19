@@ -144,6 +144,10 @@ const recentLeads    = ref([])
 
 onMounted(async () => {
   await Promise.all([loadLeads(), loadFollowUps()])
+
+  setInterval(() => {
+    loadFollowUps()
+  }, 300000)
 })
 
 async function loadLeads() {
